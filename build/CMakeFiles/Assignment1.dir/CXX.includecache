@@ -1,0 +1,20 @@
+#IncludeRegexLine: ^[ 	]*#[ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/haakon/Code/assignment1/core/main.cpp
+iostream
+-
+stdlib.h
+-
+cmath
+-
+opencv2/highgui/highgui.hpp
+-
+opencv2/core/core.hpp
+-
+
