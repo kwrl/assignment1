@@ -16,6 +16,7 @@ void show_image(cv::Mat &image) {
     cv::waitKey(0);
     cv::destroyWindow(WINDOW_NAME);
 } 
+
 void convert_to_grayscale(cv::Mat &colorImage, cv::Mat &grayscaleImage) {
     cv::Vec3b color;
     grayscaleImage = cv::Mat(colorImage.size(), CV_8UC1);
@@ -48,9 +49,8 @@ float single_pixel_convolution(cv::Mat &pixels, const cv::Mat &kernel) {
     auto pEnd = pixels.end<uchar>();
     for(; pIt != pEnd; ++pIt, ++kIt ) 
     {
-        sum += (*kIt)*(*pIt);
+        sum += static_cast<float>(*kIt)*static_cast<float>(*pIt);
     }
-
     return sum;
 }
 
@@ -60,12 +60,14 @@ void convolution(cv::Mat &inputImg, cv::Mat &outputImg, const cv::Mat &kernel, f
 
     for(int ii = 1; ii < imgSize.width-1; ii++) {
         for(int jj = 1; jj < imgSize.height-1; jj++) {
-            auto submat = inputImg.rowRange(ii-1, ii+1).colRange(jj-1, jj+1);
+            auto submat = inputImg.rowRange(ii-1, ii+2).colRange(jj-1, jj+2);
             auto p = single_pixel_convolution(
                 submat,
                 kernel
             );
-            
+            auto it = submat.begin<uchar>();
+            auto end = submat.end<uchar>();
+
             outputImg.at<uchar>(ii,jj) = static_cast<uchar>(p*scalar);
         }
     }
@@ -77,9 +79,18 @@ int main(int argc, char** argv) {
         return 1;
     }
 
+    cv::Mat originalImg, convolutedImg, kernel, grayscale, gammaImg;
+    load_image(originalImg, argv[1]);
+    show_image(originalImg);
     
+    convert_to_grayscale(originalImg, grayscale);
+    show_image(grayscale);
 
-    cv::Mat originalImg, convolutedImg, kernel;
+    gamma(grayscale, 0.8);
+    show_image(grayscale);
+    
+    
+    /*
     uchar data[3][3] = {
         {1, 2, 1},
         {2, 4, 2},
@@ -93,7 +104,7 @@ int main(int argc, char** argv) {
     for(int ii = 0; ii < 3; ii++) {
         for(int jj= 0; jj < 3; jj++) {
             auto color = originalImg.at<cv::Vec3b>(ii,jj);
-            std::cout << static_cast<int>(color[2]) << "\t";
+            std::cout << static_cast<unsigned int>(color[2]) << "\t";
         }
         std::cout << std::endl;
     }
@@ -101,6 +112,10 @@ int main(int argc, char** argv) {
     std::vector<cv::Mat> channels(3);
     cv::split(originalImg, channels);
 
+    convolution(channels[0], convolutedImg, kernel, 1.0f/16.0f);
+    channels[0] = convolutedImg;
+    convolution(channels[1], convolutedImg, kernel, 1.0f/16.0f);
+    channels[1] = convolutedImg;
     convolution(channels[2], convolutedImg, kernel, 1.0f/16.0f);
     channels[2] = convolutedImg;
 
@@ -109,12 +124,12 @@ int main(int argc, char** argv) {
     for(int ii = 0; ii < 3; ii++) {
         for(int jj= 0; jj < 3; jj++) {
             auto color = originalImg.at<cv::Vec3b>(ii,jj);
-            std::cout << static_cast<int>(color[2]) << "\t";
+            std::cout << static_cast<unsigned int>(color[2]) << "\t";
         }
         std::cout << std::endl;
     }
 
     show_image(originalImg); 
-
+    */
     return 0;
 }
