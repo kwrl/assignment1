@@ -1,8 +1,5 @@
 #include <iostream>
-#include <stdlib.h>
-#include <cmath>
-#include <opencv2/highgui/highgui.hpp>
-#include <opencv2/core/core.hpp>
+#include "utils.h"
 
 #define WINDOW_NAME "Coolio"
 
@@ -17,60 +14,74 @@ void show_image(cv::Mat &image) {
     cv::destroyWindow(WINDOW_NAME);
 } 
 
-void convert_to_grayscale(cv::Mat &colorImage, cv::Mat &grayscaleImage) {
-    cv::Vec3b color;
-    grayscaleImage = cv::Mat(colorImage.size(), CV_8UC1);
-    for(int ii = 0; ii < grayscaleImage.size().width; ii++) {
-        for(int jj= 0; jj < grayscaleImage.size().height; jj++) {
-            color = colorImage.at<cv::Vec3b>(ii, jj); 
-            grayscaleImage.at<uchar>(ii, jj) = (color[0] + color[1] + color[2])/3;
-        }
-    }
+void task1a(int argc, char** argv) {
+    cv::Mat original_img, grayscale;
+    load_image(original_img, argv[1]);
+    show_image(original_img);
+    //First equation.
+    convert_to_grayscale(original_img, grayscale);
+    show_image(grayscale);
+
+    //Second equation.
+    cv::Vec3f weights = cv::Vec3f(0.2126f, 0.7152f, 0.0722f);
+    convert_to_grayscale_weighted(original_img, grayscale, weights);
+    show_image(grayscale); 
 }
 
-void invert(cv::Mat &image) {
-    cv::MatIterator_<uchar> it, end; 
-    for( it = image.begin<uchar>(), end = image.end<uchar>(); it != end; ++it) {
-        *it = 255 -*it; 
-    }
+void task2a(int argc, char** argv) {
+    cv::Mat original_img, grayscale;   
+    load_image(original_img, argv[1]);  
+    convert_to_grayscale(original_img, grayscale);
+
+    show_image(grayscale);  //Show the image before inverting it.
+    invert(grayscale);
+    show_image(grayscale);  //Show the image after inverting it.
 }
 
-void gamma(cv::Mat &image, float y) {
-    cv::MatIterator_<uchar> it, end; 
-    for( it = image.begin<uchar>(), end = image.end<uchar>(); it != end; ++it) {
-        *it = std::pow(*it, y);
-    }
+void task2b(int argc, char** argv) {
+    cv::Mat original_img, grayscale;   
+    load_image(original_img, argv[1]);  
+    convert_to_grayscale(original_img, grayscale);
+
+    show_image(grayscale);  //Show the image before transforming it.
+    
+    gamma(grayscale, 1.0f);  
+       
+    show_image(grayscale);  //Show the image after transforming it.
 }
 
-float single_pixel_convolution(cv::Mat &pixels, const cv::Mat &kernel) {
-    float sum = 0;
-    auto pIt = pixels.begin<uchar>();
-    auto kIt = kernel.begin<uchar>();
-    auto pEnd = pixels.end<uchar>();
-    for(; pIt != pEnd; ++pIt, ++kIt ) 
-    {
-        sum += static_cast<float>(*kIt)*static_cast<float>(*pIt);
-    }
-    return sum;
+void task3a(int argc, char** argv) {
 }
 
-void convolution(cv::Mat &inputImg, cv::Mat &outputImg, const cv::Mat &kernel, float scalar) {
-    cv::Size imgSize = inputImg.size(); 
-    outputImg = cv::Mat(imgSize, CV_8UC1);
+void task3b(int argc, char** argv) {
+    cv::Mat original_img, temp, kernel, convoluted_img;   
+    load_image(original_img, argv[1]);  
+    show_image(original_img);  //Show the image before transforming it.
 
-    for(int ii = 1; ii < imgSize.width-1; ii++) {
-        for(int jj = 1; jj < imgSize.height-1; jj++) {
-            auto submat = inputImg.rowRange(ii-1, ii+2).colRange(jj-1, jj+2);
-            auto p = single_pixel_convolution(
-                submat,
-                kernel
-            );
-            auto it = submat.begin<uchar>();
-            auto end = submat.end<uchar>();
+    uchar data[3][3] = {
+        {1, 2, 1},
+        {2, 4, 2},
+        {1, 2, 1},
+    };
 
-            outputImg.at<uchar>(ii,jj) = static_cast<uchar>(p*scalar);
-        }
-    }
+    kernel = cv::Mat(3, 3, CV_8UC1, &data);
+
+    std::vector<cv::Mat> channels(3);
+    cv::split(original_img, channels); //Split channels into three separate images.
+
+    convolution(channels[0], temp, kernel, 1.0f/16.0f); 
+    channels[0] = temp;
+    convolution(channels[1], temp, kernel, 1.0f/16.0f);
+    channels[1] = temp;
+    convolution(channels[2], temp, kernel, 1.0f/16.0f);
+    channels[2] = temp;
+
+    cv::merge(channels, convoluted_img); //Merge channels after applying convolution.
+
+    show_image(convoluted_img); //Show the image after transforming it.
+}
+
+void task3c(int argc, char** argv) {
 }
 
 int main(int argc, char** argv) {
@@ -78,6 +89,9 @@ int main(int argc, char** argv) {
         std::cout << "Too few arguments" << std::endl;
         return 1;
     }
+
+    task3b(argc, argv);
+    return 0;
 
     cv::Mat originalImg, convolutedImg, kernel, grayscale, gammaImg;
     load_image(originalImg, argv[1]);

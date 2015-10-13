@@ -8,5 +8,6 @@ ADD_DEFINITIONS(
 
 find_package( OpenCV REQUIRED )
 include_directories( core/  )
+add_library(Utils core/utils.cpp)
 add_executable(Assignment1 core/main.cpp)
-target_link_libraries( Assignment1 ${OpenCV_LIBS} )
+target_link_libraries( Assignment1 Utils ${OpenCV_LIBS} )
